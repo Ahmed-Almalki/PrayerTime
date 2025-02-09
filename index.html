@@ -1,19 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>أوقات الصلاة - مكة المكرمة</title>
-    
-    <!-- تضمين الخط -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/min/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment-hijri@3.0.0/moment-hijri.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/moment-hijri@3.0.0/moment-hijri.min.js"> </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Naskh Arabic', Arial, sans-serif;
             background-color: #eef2f7;
             margin: 0;
             padding: 0;
@@ -21,11 +17,30 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: #fff;
+            transition: all 0.5s ease-in-out;
             background: url('Screen saver-0.jpg') no-repeat center center fixed;
             background-size: cover;
-            color: black;
-            text-align: center;
+            color: #000000;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            visibility: visible;
         }
+
+        .switch_Lang {
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .hidden {
+            opacity: 0;
+        }
+
 
         .container {
             background: rgba(255, 255, 255, 0.15);
@@ -34,7 +49,25 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
             width: 85%;
             max-width: 700px;
+            text-align: center;
             backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.2em;
+        }
+
+        .current-time,
+        .next-prayer {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .next-prayer {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 10px;
         }
 
         .prayer-table {
@@ -44,69 +77,77 @@
             margin-top: 20px;
         }
 
+        .prayer-table th,
+        .prayer-table td {
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .glow{
+background: #b8bcbd;
+}
+        .prayer-table th {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .error-message {
             color: red;
             font-size: 1.3em;
             margin-top: 10px;
         }
+
+
+
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1 id="title">أوقات الصلاة - مكة المكرمة</h1>
-        <div class="date-container" style="margin-bottom: 10px;">
-            <div id="gregorian-date"></div>
-            <div id="hijri-date"></div>
-        </div>
-        <div class="current-time" id="current-time"></div>
+        <h1 id="title" class="switch_Lang">أوقات الصلاة - مكة المكرمة</h1>
+
+        <div class="current-time switch_Lang" id="current-time">00</div>
 
         <div class="next-prayer">
             <div id="next-prayer-name"></div>
             <div id="next-prayer-time"></div>
-            <div id="time-remaining"></div>
+            <div id="time-remaining" class="switch_Lang"></div>
         </div>
 
-        <!-- جدول أوقات الصلاة -->
-        <table class="prayer-table" id="prayer-table">
+        <table class="prayer-table switch_Lang">
             <thead>
-                <tr id="table-header"></tr>
+                <tr id="table-header" class="switch_Lang">
+                    <th id="Fajr_lable">الفجر</th>
+                    <th id="Dhuhr_lable">الظهر</th>
+                    <th id="Asr_lable">العصر</th>
+                    <th id="Maghrib_lable">المغرب</th>
+                    <th id="Isha_lable">العشاء</th>
+                </tr>
             </thead>
             <tbody id="prayer-times"></tbody>
         </table>
 
         <div class="error-message" id="error-message"></div>
-        <audio id="azan-audio" src="azan.mp3" preload="auto"></audio>
     </div>
 
-    <script>
-        const API_URL = "https://api.aladhan.com/v1/timingsByCity?city=Makkah&country=Saudi%20Arabia&method=4";
-        let lastAzanPlayedTime = null;
-        let language = 'ar';
-        let nextPrayer = { name: "", time: "" };
-        let nextPrayerTime = null;
+    <!-- إضافة عنصر الصوت -->
+    <audio id="azan-audio" src="azan.mp3" preload="auto"></audio>
 
-        const translations = {
-            ar: {
-                title: "أوقات الصلاة - مكة المكرمة",
-                nextPrayer: "الصلاة القادمة",
-                time: "الوقت",
-                remaining: "المتبقي",
-                gregorianDate: "التاريخ الميلادي",
-                hijriDate: "التاريخ الهجري",
-                prayers: ["الفجر", "الظهر", "العصر", "المغرب", "العشاء"],
-                error: "فشل في تحميل أوقات الصلاة"
-            },
-            en: {
-                title: "Prayer Times - Makkah",
-                nextPrayer: "Next Prayer",
-                time: "Time",
-                remaining: "Remaining",
-                gregorianDate: "Gregorian Date",
-                hijriDate: "Hijri Date",
-                prayers: ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"],
-                error: "Failed to load prayer times"
+
+
+
+    <script>
+        API_URL = "https://api.aladhan.com/v1/timingsByCity?city=Makkah&country=Saudi%20Arabia&method=4";
+        let language = 'ar';
+        let nextPrayerTime = null;
+        let lastAzanPlayedTime = null; // Track the last azan played time to prevent replaying
+
+        // دالة تحويل الأرقام إلى أرقام عربية إذا كانت اللغة عربية
+        function formatNumber(number) {
+            if (language === 'ar') {
+                return number.toLocaleString('ar-SA'); // تحويل الأرقام إلى أرقام عربية
+            } else {
+                return number.toLocaleString('en-US'); // الحفاظ على الأرقام الإنجليزية
             }
-        };
+        }
 
         async function updatePrayerTimes() {
             try {
@@ -114,99 +155,123 @@
                 const data = await response.json();
                 const timings = data.data.timings;
                 const now = new Date();
-                // now.setDate(now.getDate() + 1);
 
+                const prayers = [
+                    { ar: 'الفجر', en: 'Fajr', time: timings.Fajr },
+                    { ar: 'الظهر', en: 'Dhuhr', time: timings.Dhuhr },
+                    { ar: 'العصر', en: 'Asr', time: timings.Asr },
+                    { ar: 'المغرب', en: 'Maghrib', time: timings.Maghrib },
+                    { ar: 'العشاء', en: 'Isha', time: timings.Isha }
+                ];
 
-                function to12HourFormat(time) {
-                    let [hours, minutes] = time.split(':').map(Number);
-                    let period = language === 'ar' ? (hours >= 12 ? 'م' : 'ص') : (hours >= 12 ? 'PM' : 'AM');
-                    hours = hours % 12 || 12;
-                    return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;
+                document.getElementById('prayer-times').innerHTML = `<tr>${prayers.map(p => `<td>${new Date('1970-01-01T' + p.time).toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>`).join('')}</tr>`;
+
+                // Iterate over all prayer times to check if the azan should play
+                prayers.forEach(prayer => {
+
+                });
+
+                // Update the time remaining for the next prayer
+                let nextPrayer = prayers.find(p => new Date(now.toDateString() + ' ' + p.time) > now);
+                if (!nextPrayer) {
+                    nextPrayer = prayers[0]; // If no upcoming prayer, cycle back to the first one
+                    nextPrayerTime = new Date(now.toDateString() + ' ' + nextPrayer.time);
+                    nextPrayerTime.setDate(nextPrayerTime.getDate() + 1); // Add 1 day
+
+                } else {
+                    nextPrayerTime = new Date(now.toDateString() + ' ' + nextPrayer.time);
                 }
-
-                const prayersList = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"].map((prayerName, index) => ({
-                    name: translations[language].prayers[index],
-                    time: to12HourFormat(timings[prayerName])
-                }));
-               nextPrayer = prayersList.find(p => new Date(now.toDateString() + ' ' + p.time) > now) || prayersList[0];
-
-                document.getElementById('prayer-times').innerHTML = prayersList.map(p => `<td>${convertNumbers(p.time)}</td>`).join('');
-
-                updateText();
-                updateRemainingTime();
-            } catch (error) {
-                document.getElementById('error-message').textContent = translations[language].error;
-            }
-        }
-
-        function updateRemainingTime() {
-    if (!nextPrayer || !nextPrayer.time) return;
-
-    const now = moment();
-
-
-    let prayerTime = moment(`${now.format('YYYY-MM-DD')} ${nextPrayer.time}`, 'YYYY-MM-DD hh:mm A');
-    
-    if (prayerTime.isBefore(now)) {
-        prayerTime.add(1, 'days');
-    }
-
-    const remainingTime = prayerTime.diff(now);
-    const duration = moment.duration(remainingTime);
-
-    const hours = duration.hours();
-    const minutes = duration.minutes();
-    const seconds = duration.seconds();
-
-    const formattedHours = convertNumbers(String(hours).padStart(2, '0'));
-    const formattedMinutes = convertNumbers(String(minutes).padStart(2, '0'));
-    const formattedSeconds = convertNumbers(String(seconds).padStart(2, '0'));
-
-    const timeText = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-
-    document.getElementById('time-remaining').textContent = timeText;
-
-    if (remainingTime <= 0) {
-        playAzan();
-    }
-}
-
-
-        function convertNumbers(text) {
-            const arabicNumbers = "٠١٢٣٤٥٦٧٨٩";
-            return text.replace(/\d/g, d => language === 'ar' ? arabicNumbers[d] : d);
-        }
-
-        function playAzan() {
-            const now = new Date();
-
-            if (!lastAzanPlayedTime || lastAzanPlayedTime.toDateString() !== now.toDateString() || 
-                lastAzanPlayedTime.getHours() !== now.getHours() || lastAzanPlayedTime.getMinutes() !== now.getMinutes()) {
                 
-                document.getElementById('azan-audio').play();
-                lastAzanPlayedTime = now;
+
+
+                remainingTime = nextPrayerTime - now;
+                 hours = Math.floor(remainingTime / (1000 * 60 * 60));
+                 minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                 seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+                 timeRemaining = language === 'ar'
+                    ? `الوقت المتبقي للصلاة القادمة: ${formatNumber(hours)} ساعة ${formatNumber(minutes)} دقيقة ${formatNumber(seconds)} ثانية`
+                    : `Time remaining for next prayer: ${formatNumber(hours)}h ${formatNumber(minutes)}m ${formatNumber(seconds)}s`;
+
+                document.getElementById('time-remaining').textContent = timeRemaining;
+
+                /*document.getElementById("prayer-times").style.visibility = "visible";
+                document.getElementById("table-header").style.visibility = "visible";
+                document.getElementById("time-remaining").style.visibility = "visible";
+                document.getElementById("current-time").style.visibility = "visible";
+                document.getElementById("title").style.visibility = "visible";
+                */
+                setTimeout(() => {
+                    element = document.getElementsByClassName("switch_Lang")
+                    for (let index = 0; index < element.length - 1; index++) {
+                        element[index].classList.remove("hidden");
+                    }
+
+                }, 250);
+
+            } catch (error) {
+                document.getElementById('error-message').textContent = 'فشل في تحميل أوقات الصلاة';
             }
         }
 
-        function updateText() {
-            document.getElementById('title').textContent = translations[language].title;
-            document.getElementById('next-prayer-name').textContent = `${translations[language].nextPrayer}: ${nextPrayer.name}`;
-            document.getElementById('next-prayer-time').textContent = `${translations[language].time}: ${convertNumbers(nextPrayer.time)}`;
-            document.getElementById('gregorian-date').textContent = `${translations[language].gregorianDate}: ${convertNumbers(moment().format('YYYY-MM-DD'))}`;
-            document.getElementById('hijri-date').textContent = `${translations[language].hijriDate}: ${convertNumbers(moment().format('iYYYY-iMM-iDD'))}`;
-            document.getElementById('prayer-table').style.direction = language === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('table-header').innerHTML = translations[language].prayers.map(p => `<th>${p}</th>`).join('');
+        function updateCurrentTime() {
+            const now = new Date();
+            const numberOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const timeString = now.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', numberOptions);
+            document.getElementById('current-time').textContent = timeString;
+
+            remainingTime = nextPrayerTime - now;
+                 hours = Math.floor(remainingTime / (1000 * 60 * 60));
+                 minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                 seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+                 timeRemaining = language === 'ar'
+                    ? `الوقت المتبقي للصلاة القادمة: ${formatNumber(hours)} ساعة ${formatNumber(minutes)} دقيقة ${formatNumber(seconds)} ثانية`
+                    : `Time remaining for next prayer: ${formatNumber(hours)}h ${formatNumber(minutes)}m ${formatNumber(seconds)}s`;
+
+                document.getElementById('time-remaining').textContent = timeRemaining;
+
+                
+                if ((hours == 0 && minutes == 0 && seconds==0)) {
+                    const azanAudio = document.getElementById('azan-audio');
+                    azanAudio.play();
+                }
         }
 
-        function switchLanguage() {
-            language = language === 'ar' ? 'en' : 'ar';
-            updatePrayerTimes();
+        function toggleLanguage() {
+            /*   document.getElementById("prayer-times").style.visibility = "hidden";
+               document.getElementById("table-header").style.visibility = "hidden";
+               document.getElementById("time-remaining").style.visibility = "hidden";
+               document.getElementById("current-time").style.visibility = "hidden";
+               document.getElementById("title").style.visibility = "hidden";*/
+
+            element = document.getElementsByClassName("switch_Lang")
+            for (let index = 0; index < element.length - 1; index++) {
+                element[index].classList.add("hidden");
+            }
+
+            setTimeout(() => {
+
+                language = language === 'ar' ? 'en' : 'ar';
+                document.getElementById('title').textContent = language === 'ar' ? 'أوقات الصلاة - مكة المكرمة' : 'Prayer Times - Makkah';
+                document.getElementById('Isha_lable').innerHTML = language === 'ar' ? 'العشاء' : 'Isha';
+                document.getElementById('Fajr_lable').innerHTML = language === 'ar' ? 'الفجر' : 'Fajr';
+                document.getElementById('Dhuhr_lable').innerHTML = language === 'ar' ? 'الظهر' : 'Dhuhr';
+                document.getElementById('Asr_lable').innerHTML = language === 'ar' ? 'العصر' : 'Asr';
+                document.getElementById('Maghrib_lable').innerHTML = language === 'ar' ? 'المغرب' : 'Maghrib';
+                updateCurrentTime();
+                updatePrayerTimes();
+            }, 500);
+
+
+
         }
-        setInterval(updateText, 6000); 
+
         updatePrayerTimes();
-        // setInterval(updatePrayerTimes, 60000);
-        setInterval(updateRemainingTime, 1000); // Update every second
-        setInterval(switchLanguage, 6200); // Switch language every 5 seconds
+        setInterval(updatePrayerTimes, 60000);  // تحديث أوقات الصلاة كل دقيقة
+        setInterval(updateCurrentTime, 1000);  // تحديث الوقت الحالي كل ثانية
+        setInterval(toggleLanguage, 10000);  // التبديل بين اللغات كل 5 ثوانٍ
     </script>
 </body>
+
 </html>
